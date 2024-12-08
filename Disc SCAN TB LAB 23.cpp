@@ -1,61 +1,76 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Function to find the SCAN disk scheduling order
-void scanDiskScheduling(int requests[], int numRequests, int initialPosition, int diskSize, int direction) {
-    int totalHeadMovement = 0;
-    int currentPosition = initialPosition;
-    int i, j;
-
-    // Sort the requests array for easier processing
-    for (i = 0; i < numRequests - 1; i++) {
-        for (j = 0; j < numRequests - i - 1; j++) {
-            if (requests[j] > requests[j + 1]) {
-                int temp = requests[j];
-                requests[j] = requests[j + 1];
-                requests[j + 1] = temp;
+// Function to sort an array in ascending order
+void sort(int arr[], int n) {
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = 0; j < n - i - 1; j++) {
+            if (arr[j] > arr[j + 1]) {
+                int temp = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = temp;
             }
         }
     }
+}
+
+// SCAN Disk Scheduling Algorithm
+void scanDiskScheduling(int requests[], int numRequests, int initialPosition, int diskSize, int direction) {
+    int totalHeadMovement = 0;
+    int currentPosition = initialPosition;
+
+    // Sort the requests for easier processing
+    sort(requests, numRequests);
 
     printf("Order of service:\n");
 
-    if (direction == 0) {  // Moving towards the lower end (left)
-        for (i = numRequests - 1; i >= 0; i--) {
-            if (requests[i] <= currentPosition) {
-                printf("%d ", requests[i]);
-                totalHeadMovement += abs(requests[i] - currentPosition);
-                currentPosition = requests[i];
-            }
-        }
-        // Move to the beginning (track 0)
-        totalHeadMovement += currentPosition;
-        currentPosition = 0;
-
-        // Move towards the higher end (right)
-        for (i = 0; i < numRequests; i++) {
-            if (requests[i] >= currentPosition) {
-                printf("-> %d", requests[i]);
-                totalHeadMovement += abs(requests[i] - currentPosition);
-                currentPosition = requests[i];
-            }
-        }
-    } else {  // Moving towards the higher end (right)
-        for (i = 0; i < numRequests; i++) {
+    // Depending on the direction, process requests
+    if (direction == 1) { // Moving towards higher track numbers (upwards)
+        // Process requests greater than or equal to the current position
+        for (int i = 0; i < numRequests; i++) {
             if (requests[i] >= currentPosition) {
                 printf("%d ", requests[i]);
                 totalHeadMovement += abs(requests[i] - currentPosition);
                 currentPosition = requests[i];
             }
         }
-        // Move to the end (disk size - 1)
-        totalHeadMovement += (diskSize - 1 - currentPosition);
-        currentPosition = diskSize - 1;
 
-        // Move towards the lower end (left)
-        for (i = numRequests - 1; i >= 0; i--) {
+        // Move to the end of the disk if not already there
+        if (currentPosition < diskSize - 1) {
+            totalHeadMovement += abs((diskSize - 1) - currentPosition);
+            currentPosition = diskSize - 1;
+            printf("%d ", currentPosition); // End of disk
+        }
+
+        // Process requests less than the initial position (reverse direction)
+        for (int i = numRequests - 1; i >= 0; i--) {
+            if (requests[i] < initialPosition) {
+                printf("%d ", requests[i]);
+                totalHeadMovement += abs(requests[i] - currentPosition);
+                currentPosition = requests[i];
+            }
+        }
+    } else { // Moving towards lower track numbers (downwards)
+        // Process requests less than or equal to the current position
+        for (int i = numRequests - 1; i >= 0; i--) {
             if (requests[i] <= currentPosition) {
-                printf("-> %d", requests[i]);
+                printf("%d ", requests[i]);
+                totalHeadMovement += abs(requests[i] - currentPosition);
+                currentPosition = requests[i];
+            }
+        }
+
+        // Move to the start of the disk if not already there
+        if (currentPosition > 0) {
+            totalHeadMovement += abs(currentPosition - 0);
+            currentPosition = 0;
+            printf("%d ", currentPosition); // Start of disk
+        }
+
+        // Process requests greater than the initial position (reverse direction)
+        for (int i = 0; i < numRequests; i++) {
+            if (requests[i] > initialPosition) {
+                printf("%d ", requests[i]);
                 totalHeadMovement += abs(requests[i] - currentPosition);
                 currentPosition = requests[i];
             }
@@ -87,8 +102,8 @@ int main() {
     printf("Enter the disk size (number of tracks): ");
     scanf("%d", &diskSize);
 
-    // Input the direction of the initial movement (0 for left, 1 for right)
-    printf("Enter the initial direction (0 for left, 1 for right): ");
+    // Input the initial direction of movement (1 for up, 0 for down)
+    printf("Enter the initial direction (1 for up, 0 for down): ");
     scanf("%d", &direction);
 
     // Implementing the SCAN disk scheduling algorithm
